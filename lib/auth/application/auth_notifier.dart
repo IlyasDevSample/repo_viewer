@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../domain/auth_failure.dart';
+import '../infrastructure/github_authenticator.dart';
 
 part 'auth_notifier.freezed.dart';
 
@@ -14,6 +15,16 @@ class AuthState  with _$AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(const AuthState.initial());
+  GithubAuthenticator _authenticator;
+  AuthNotifier(this._authenticator) : super(const AuthState.initial());
+
+  Future<void> checkAndUpdateAuthState() async {
+    final isSignedIn = await _authenticator.isSignedIn();
+    if (isSignedIn) {
+      state = const AuthState.authenticated();
+    } else {
+      state = const AuthState.unauthenticated();
+    }
+  }
 
 }
