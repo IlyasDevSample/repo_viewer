@@ -14,6 +14,8 @@ class AuthState  with _$AuthState {
   const factory AuthState.failure(AuthFailure failure) = _Failure;
 }
 
+typedef AuthUriCallbackFn = Future<Uri> Function(Uri authorizationUrl);
+
 class AuthNotifier extends StateNotifier<AuthState> {
   GithubAuthenticator _authenticator;
   AuthNotifier(this._authenticator) : super(const AuthState.initial());
@@ -27,4 +29,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> signIn(AuthUriCallbackFn authorizationCallBack) async {
+    final grant = _authenticator.createGrant();
+    final authorizationUrl = _authenticator.getAuthorizationUrl(grant);
+    final redirectUrl = await authorizationCallBack(authorizationUrl);
+    final leftOrRight = await _authenticator.handleAuthorizationResponse(redirectUrl.queryParameters, grant);
+    leftOrRight.fold(
+      (l) => state = AuthState.failure(l),
+      (r) => state = const AuthState.authenticated(),
+    );
+    grant.close();
+  }
+
+  Future<void> signOut() async {
+    final leftOrRight = await _authenticator.signOut();
+    leftOrRight.fold(
+      (l) => state = AuthState.failure(l),
+      (r) => state = const AuthState.unauthenticated(),
+    );
+  }
 }
