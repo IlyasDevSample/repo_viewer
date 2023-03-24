@@ -152,9 +152,8 @@ class GithubAuthenticator {
     }on AuthorizationException catch (e) {
       return left(AuthFailure.server('${e.error}: ${e.description}'));
     }
-
-
   }
+
 
 
 }
